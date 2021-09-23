@@ -7,6 +7,8 @@ class User < ApplicationRecord
   has_secure_password
 
   has_many :microposts
+  
+  # フォローフォロワーのテーブルについて
   has_many :relationships
   has_many :followings, through: :relationships, source: :follow
   has_many :reverses_of_relationship, class_name: 'Relationship', foreign_key: 'follow_id'
@@ -29,5 +31,24 @@ class User < ApplicationRecord
   
   def feed_microposts
     Micropost.where(user_id: self.following_ids + [self.id])
+  end
+
+  # お気に入りのテーブルについて
+  has_many :favorites
+  has_many :favorited_microposts, through: :favorites, source: :micropost
+  # has_many :reverses_of_favorites, class_name: 'Favorites', foreign_key: 'micropost_id'
+  # has_many :posted_users, through: :reverses_of_favorites, source: :user
+  
+  def favorite(micropost)
+    self.favorites.find_or_create_by(user_id: self.id, micropost_id: micropost.id)
+  end 
+  
+  def unfavorite(micropost)
+    favorite = self.favorites.find_by(user_id: self.id, micropost_id: micropost.id)
+    favorite.destroy if favorite
+  end
+  
+  def favorite?(micropost)
+    self.favorited_microposts.include?(micropost)
   end
 end
